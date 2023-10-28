@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 import torch.nn as nn
 
 import logging
@@ -109,11 +110,18 @@ class TwoLayerNet(object):
     # classifier loss.                                                          #
     #############################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-	
-    m = nn.Softmax()                      # Softmax
-    loss = nn.NLLLoss()
-    loss += W1**2 + W2**2   # Loss: LLloss + L2 regularization
-    loss = loss(m(scores), y)     
+  
+    def softmax(input):
+      exp = np.exp(input)
+      sum_exp = np.sum(exp, axis = 1)
+      result = (exp / sum_exp).reshape(N, 1)
+
+      return result
+
+    L2norm = reg*(np.sum(np.square(W1)) + np.sum(np.square(W2)))
+
+    LLloss = -np.sum(np.log(softmax([np.arange(N), y]))//N)
+    loss = LLloss + L2norm          # Loss: LLloss + L2 regularization
 	
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
@@ -284,7 +292,7 @@ if __name__=='__main__':
 
   scores = net.loss(X)
   print('Your scores:')
-  # print(scores)
+  print(scores)
   print()
   print('correct scores:')
   correct_scores = np.asarray([
@@ -299,3 +307,10 @@ if __name__=='__main__':
   # The difference should be very small. We get < 1e-7
   print('Difference between your scores and correct scores:')
   print(np.sum(np.abs(scores - correct_scores)))
+
+  loss, _ = net.loss(X, y, reg=0.05)
+  correct_loss = 1.30378789133
+
+  # should be very small, we get < 1e-12
+  print('Difference between your loss and correct loss:')
+  print(np.sum(np.abs(loss - correct_loss)))
