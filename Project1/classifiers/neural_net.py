@@ -2,6 +2,10 @@ from __future__ import print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
+import torch.nn as nn
+
+import logging
+
 
 class TwoLayerNet(object):
   """
@@ -42,7 +46,7 @@ class TwoLayerNet(object):
     self.params['W2'] = std * np.random.randn(hidden_size, output_size)
     self.params['b2'] = np.zeros(output_size)
 
-  def loss(self, X, y=None, reg=0.0):
+  def loss(self, X, y=None, reg=0.0): 
     """
     Compute the loss and gradients for a two layer fully connected neural
     network.
@@ -78,9 +82,15 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-	
-    pass
-	
+      
+
+    def relu(x):
+      return np.maximum(0, x)
+
+    y1 = np.dot(X, W1) + b1
+    hidden1 = relu(y1)
+    scores = np.dot(hidden1, W2) + b2
+
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -100,7 +110,10 @@ class TwoLayerNet(object):
     #############################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 	
-    pass
+    m = nn.Softmax()                      # Softmax
+    loss = nn.NLLLoss()
+    loss += W1**2 + W2**2   # Loss: LLloss + L2 regularization
+    loss = loss(m(scores), y)     
 	
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
@@ -115,8 +128,11 @@ class TwoLayerNet(object):
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-	
-    pass
+
+    W1.requires_grad_(True)
+    W2.requires_grad_(True)
+    loss.backward()
+    grads = {'W1': W1.grad, 'W2': W2.grad}
 	
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
@@ -245,3 +261,41 @@ class TwoLayerNet(object):
     return y_pred
 
 
+if __name__=='__main__':
+  import numpy as np
+
+  input_size = 4
+  hidden_size = 10
+  num_classes = 3
+  num_inputs = 5
+
+  def init_toy_model():
+      np.random.seed(0)
+      return TwoLayerNet(input_size, hidden_size, num_classes, std=1e-1)
+
+  def init_toy_data():
+      np.random.seed(1)
+      X = 10 * np.random.randn(num_inputs, input_size)
+      y = np.array([0, 1, 2, 2, 1])
+      return X, y
+
+  net = init_toy_model()
+  X, y = init_toy_data()
+
+  scores = net.loss(X)
+  print('Your scores:')
+  # print(scores)
+  print()
+  print('correct scores:')
+  correct_scores = np.asarray([
+    [-0.81233741, -1.27654624, -0.70335995],
+    [-0.17129677, -1.18803311, -0.47310444],
+    [-0.51590475, -1.01354314, -0.8504215 ],
+    [-0.15419291, -0.48629638, -0.52901952],
+    [-0.00618733, -0.12435261, -0.15226949]])
+  print(correct_scores)
+  print()
+
+  # The difference should be very small. We get < 1e-7
+  print('Difference between your scores and correct scores:')
+  print(np.sum(np.abs(scores - correct_scores)))
