@@ -122,7 +122,7 @@ class TwoLayerNet(object):
     scores_softmax = softmax(scores)
 
     # Loss: LLloss + L2norm
-    loss = -np.sum(np.log(scores_softmax[range(N), y])) / N + reg*(np.sum(W1**2) + np.sum(W2**2))
+    loss = -np.sum(np.log(scores_softmax[range(N), y] + 1e-8)) / N + reg*(np.sum(W1**2) + np.sum(W2**2))
   # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
     #                              END OF YOUR CODE                             #
