@@ -89,8 +89,8 @@ class TwoLayerNet(object):
       return np.maximum(0, x)
 
     y1 = np.dot(X, W1) + b1
-    hidden1 = relu(y1)
-    scores = np.dot(hidden1, W2) + b2
+    y1 = relu(y1)
+    scores = np.dot(y1, W2) + b2
 
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
@@ -143,13 +143,13 @@ class TwoLayerNet(object):
 
     # W2 gradient
     dldz = softmax(scores) - y_onehot                       # [5x3]
-    dldw2 = np.dot(hidden1.T, dldz) / N + 2*reg*W2          # [10x3]
+    dldw2 = np.dot(y1.T, dldz) / N + 2*reg*W2          # [10x3]
 
     # b2 gradient
     dldb2 = np.sum(dldz, axis = 0) / N                      # [3,]
 
     # W1 gradient
-    dy1 = np.dot(dldz, W2.T)*((hidden1>0)*1) / N
+    dy1 = np.dot(dldz, W2.T)*((y1>0)*1) / N
     dldw1 = np.dot(X.T, dy1) + 2*reg*W1
 
     # b1 gradient
