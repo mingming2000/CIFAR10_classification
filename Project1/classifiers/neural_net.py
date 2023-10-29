@@ -84,7 +84,7 @@ class TwoLayerNet(object):
     #############################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
       
-
+    # Relu
     def relu(x):
       return np.maximum(0, x)
 
@@ -113,17 +113,17 @@ class TwoLayerNet(object):
   
     def softmax(input):
       exp = np.exp(input)
-      sum_exp = np.sum(exp, axis = 1)
-      result = (exp / sum_exp).reshape(N, 1)
+      sum_exp = np.sum(exp, axis=1).reshape(-1, 1)
+      result = (exp / sum_exp)
 
       return result
 
-    L2norm = reg*(np.sum(np.square(W1)) + np.sum(np.square(W2)))
+    # Softmax
+    scores_softmax = softmax(scores)
 
-    LLloss = -np.sum(np.log(softmax([np.arange(N), y]))//N)
-    loss = LLloss + L2norm          # Loss: LLloss + L2 regularization
-	
-	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    # Loss: LLloss + L2norm
+    loss = -np.sum(np.log(scores_softmax[range(N), y])) / N + reg*(np.sum(W1**2) + np.sum(W2**2))
+  # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -137,11 +137,30 @@ class TwoLayerNet(object):
     #############################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    W1.requires_grad_(True)
-    W2.requires_grad_(True)
-    loss.backward()
-    grads = {'W1': W1.grad, 'W2': W2.grad}
-	
+    # One-Hot Encoding
+    num_label = W2.shape[1]
+    y_onehot = np.eye(num_label)[y]
+
+    # W2 gradient
+    dldz = softmax(scores) - y_onehot                       # [5x3]
+    dldw2 = np.dot(hidden1.T, dldz) / N + 2*reg*W2          # [10x3]
+
+    # b2 gradient
+    dldb2 = np.sum(dldz, axis = 0) / N                      # [3,]
+
+    # W1 gradient
+    dy1 = np.dot(dldz, W2.T)*((hidden1>0)*1) / N
+    dldw1 = np.dot(X.T, dy1) + 2*reg*W1
+
+    # b1 gradient
+    dldb1 = np.sum(dy1, axis = 0)
+
+    grads['W1'] = dldw1
+    grads['b1'] = dldb1
+    grads['W2'] = dldw2
+    grads['b2'] = dldb2
+  
+
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -189,7 +208,9 @@ class TwoLayerNet(object):
       #########################################################################
 	  # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 	  
-      pass
+    batch_idx = np.random.choice(np.arange(num_train), batch_size)
+    X_batch = X[batch_idx]
+    y_batch = y[batch_idx]
 	  
 	  # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
       #########################################################################
@@ -270,6 +291,19 @@ class TwoLayerNet(object):
 
 
 if __name__=='__main__':
+
+  import numpy as np
+  import matplotlib.pyplot as plt # library for plotting figures
+
+
+  plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
+  plt.rcParams['image.interpolation'] = 'nearest'
+  plt.rcParams['image.cmap'] = 'gray'
+
+  def rel_error(x, y):
+      """ returns relative error """
+      return np.max(np.abs(x - y) / (np.maximum(1e-8, np.abs(x) + np.abs(y))))
+
   import numpy as np
 
   input_size = 4
@@ -314,3 +348,19 @@ if __name__=='__main__':
   # should be very small, we get < 1e-12
   print('Difference between your loss and correct loss:')
   print(np.sum(np.abs(loss - correct_loss)))
+
+
+  from gradient_check import eval_numerical_gradient
+
+  # Use numeric gradient checking to check your implementation of the backward pass.
+  # If your implementation is correct, the difference between the numeric and
+  # analytic gradients should be less than 1e-8 for each of W1, W2, b1, and b2.
+
+  loss, grads = net.loss(X, y, reg=0.05)
+
+  # these should all be less than 1e-8 or so
+  for param_name in grads:
+      f = lambda W: net.loss(X, y, reg=0.05)[0]
+      param_grad_num = eval_numerical_gradient(f, net.params[param_name], verbose=False)
+      print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
+      
