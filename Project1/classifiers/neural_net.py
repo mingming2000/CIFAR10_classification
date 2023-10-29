@@ -208,9 +208,9 @@ class TwoLayerNet(object):
       #########################################################################
 	  # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 	  
-    batch_idx = np.random.choice(np.arange(num_train), batch_size)
-    X_batch = X[batch_idx]
-    y_batch = y[batch_idx]
+      batch_idx = np.random.choice(np.arange(num_train), batch_size)
+      X_batch = X[batch_idx]
+      y_batch = y[batch_idx]
 	  
 	  # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
       #########################################################################
@@ -229,7 +229,10 @@ class TwoLayerNet(object):
       #########################################################################
 	  # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 	  
-      pass
+      self.params['W1'] -= learning_rate * grads['W1']
+      self.params['b1'] -= learning_rate * grads['b1']
+      self.params['W2'] -= learning_rate * grads['W2']
+      self.params['b2'] -= learning_rate * grads['b2']
 	  
 	  # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
       #########################################################################
@@ -279,9 +282,9 @@ class TwoLayerNet(object):
 	# perform forward pass and return index of maximum scores				  #
     ###########################################################################
 	# *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-	
-    pass
-	
+
+    y_pred = np.argmax(self.loss(X), axis=1)
+
 	# *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                              END OF YOUR CODE                           #
@@ -363,4 +366,19 @@ if __name__=='__main__':
       f = lambda W: net.loss(X, y, reg=0.05)[0]
       param_grad_num = eval_numerical_gradient(f, net.params[param_name], verbose=False)
       print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
-      
+  
+  net = init_toy_model()
+  stats = net.train(X, y, X, y,
+              learning_rate=1e-1, reg=5e-6,
+              num_iters=100, verbose=False)
+
+  print('Final training loss: ', stats['loss_history'][-1])
+
+  # plot the loss history
+  plt.plot(stats['loss_history'])
+  plt.xlabel('iteration')
+  plt.ylabel('training loss')
+  plt.title('Training Loss history')
+  plt.show()
+
+  
